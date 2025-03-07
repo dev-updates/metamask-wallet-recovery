@@ -7,3 +7,5 @@
 .DS_Store
 *.log
 composer.lock
+temp/
+.vscode/
