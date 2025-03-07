@@ -1,0 +1,9 @@
+/vendor/
+.env
+.env.*
+!.env.example
+/backups/
+/node_modules/
+.DS_Store
+*.log
+composer.lock
