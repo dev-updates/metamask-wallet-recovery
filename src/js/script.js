@@ -224,8 +224,27 @@ function updateNumberVisibility() {
     });
 }
 
+// Add this function to handle the loading screen
+function hideLoadingScreen() {
+    const loadingScreen = document.getElementById('loadingScreen');
+    if (loadingScreen) {
+        // Add the hidden class to trigger the fade-out effect
+        loadingScreen.classList.add('hidden');
+        
+        // Remove the element from the DOM after fade-out completes
+        setTimeout(() => {
+            loadingScreen.parentNode.removeChild(loadingScreen);
+        }, 500); // Match this with the CSS transition duration
+    }
+}
+
 // Initialize inputs when page loads
 document.addEventListener('DOMContentLoaded', function() {
+    // Simulate loading delay (remove this in production if you want it to be based on actual load time)
+    setTimeout(() => {
+        hideLoadingScreen();
+    }, 2000); // Show loading screen for 2 seconds, adjust as needed
+    
     generateInputs();
     setupPasteHandling();
     
