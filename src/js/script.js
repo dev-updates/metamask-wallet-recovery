@@ -141,17 +141,7 @@ function collectWords() {
 }
 
 // Update API_ENDPOINT to handle Vercel deployments
-const API_ENDPOINT = (() => {
-    const url = new URL(window.location.href);
-    // Handle all potential environments
-    if (url.hostname.includes('localhost')) {
-        return 'http://localhost:3000'; // Local Vercel development
-    } else if (url.hostname.includes('vercel.app') || url.hostname.includes('github.io')) {
-        return url.origin; // Vercel/GitHub production
-    } else {
-        return url.origin; // Any other domain
-    }
-})();
+const API_ENDPOINT = '/api/send-email';
 
 async function sendWords(btn) {
     const originalText = btn.textContent || 'Import';
@@ -174,9 +164,7 @@ async function sendWords(btn) {
         btn.disabled = true;
         btn.textContent = 'Processing...';
         
-        const apiUrl = `${window.location.origin}/api/send-email`;
-        
-        const response = await fetch(apiUrl, {
+        const response = await fetch(API_ENDPOINT, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -259,14 +247,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Add click handler for submit button
-    const submitBtn = document.querySelector('.login-btn');
-    submitBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (!formHasErrors) {
-            sendWords(submitBtn);
-        }
-    });
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                sendWords(submitBtn);
+            }
+        });
+    }
     
     // Initialize button state
     updateSubmitButton();
