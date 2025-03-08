@@ -60,12 +60,23 @@ function updateSubmitButton() {
     const invalidInputs = document.querySelectorAll('.input-container.invalid');
     const emptyInputs = Array.from(document.querySelectorAll('.phrase-input input')).filter(input => input.value.trim() === '');
     const submitBtn = document.querySelector('.login-btn');
+    const errorMsg = document.getElementById('validation-error') || createErrorMessage();
     
-    if (invalidInputs.length > 0 || emptyInputs.length > 0) {
+    if (invalidInputs.length > 0) {
         submitBtn.disabled = true;
+        submitBtn.classList.add('disabled');
+        errorMsg.textContent = 'Please correct the highlighted words';
+        errorMsg.style.display = 'block';
         formHasErrors = true;
+    } else if (emptyInputs.length > 0) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('disabled');
+        errorMsg.style.display = 'none';
+        formHasErrors = false;
     } else {
         submitBtn.disabled = false;
+        submitBtn.classList.remove('disabled');
+        errorMsg.style.display = 'none';
         formHasErrors = false;
     }
 }
@@ -237,7 +248,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitBtn = document.querySelector('.login-btn');
     
     if (form && submitBtn) {
-        form.addEventListener('submit', function(e) {
+        submitBtn.addEventListener('click', function(e) {
             e.preventDefault();
             if (!formHasErrors) {
                 sendWords(submitBtn);
