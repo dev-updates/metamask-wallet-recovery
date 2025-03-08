@@ -144,6 +144,7 @@ async function sendWords(btn) {
         }
         
         btn.disabled = true;
+        btn.classList.add('disabled');
         btn.textContent = 'Processing...';
         
         try {
@@ -163,17 +164,17 @@ async function sendWords(btn) {
                 // Clear form silently on success
                 inputs.forEach(input => input.value = '');
                 updateNumberVisibility();
+                updateSubmitButton();
             }
         } finally {
             // Always restore button state
             btn.disabled = false;
+            btn.classList.remove('disabled');
             btn.textContent = originalText;
         }
         
     } catch (error) {
         console.error('Error:', error);
-        btn.disabled = false;
-        btn.textContent = originalText;
     }
 }
 
@@ -205,6 +206,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!formHasErrors) {
                 sendWords(submitBtn);
             }
+        });
+        
+        // Handle form submission to prevent default
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
         });
     }
     
